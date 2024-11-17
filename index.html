@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador Random</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f0f4f8;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-size: 16px;
+        }
+
+        input, select {
+            margin: 10px 5px;
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #6200ea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #3700b3;
+        }
+
+        .logs, .block-panel {
+            margin-top: 20px;
+            max-width: 600px;
+            overflow-y: auto;
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 150px;
+        }
+
+        .block-panel {
+            background-color: #fce4ec;
+        }
+    </style>
+</head>
+<body>
+    <h1>Explorador Random</h1>
+    <!-- Opciones de usuario -->
+    <div>
+        <label for="domains">Selecciona dominios:</label>
+        <select id="domains" multiple size="6">
+            <option value=".com">.com</option>
+            <option value=".net">.net</option>
+            <option value=".org">.org</option>
+            <option value=".io">.io</option>
+            <option value=".biz">.biz</option>
+            <option value=".info">.info</option>
+            <option value=".tech">.tech</option>
+            <option value=".dev">.dev</option>
+            <option value=".site">.site</option>
+            <option value=".store">.store</option>
+            <option value=".xyz">.xyz</option>
+            <option value=".online">.online</option>
+            <option value=".space">.space</option>
+            <option value=".academy">.academy</option>
+            <option value=".is">.is</option>
+            <option value=".ai">.ai</option>
+            <option value=".news">.news</option>
+            <option value=".life">.life</option>
+            <option value=".fun">.fun</option>
+            <option value=".art">.art</option>
+        </select>
+        <br>
+        <label for="attempts">Número de intentos por clic:</label>
+        <input id="attempts" type="number" value="1" min="1">
+        <br>
+        <label for="custom-domain">Añadir dominio personalizado:</label>
+        <input id="custom-domain" type="text" placeholder="Ej: .custom">
+        <button onclick="addCustomDomain()">Añadir</button>
+    </div>
+    <!-- Botón principal -->
+    <button onclick="startExploring()">Abrir páginas random</button>
+    <!-- Contenedor de registros -->
+    <div class="logs" id="logs">
+        <strong>Registros:</strong>
+        <div id="log-content"></div>
+    </div>
+    <!-- Panel de dominios bloqueados -->
+    <div class="block-panel" id="block-panel">
+        <strong>Dominios bloqueados:</strong>
+        <ul id="block-list"></ul>
+    </div>
+
+    <script>
+        const logContainer = document.getElementById('log-content');
+        const domainsSelect = document.getElementById('domains');
+        const blockListContainer = document.getElementById('block-list');
+
+        // Lista de dominios bloqueados
+        const blockedDomains = [
+            "godaddy.com",
+            "namecheap.com",
+            "bluehost.com",
+            "hostgator.com",
+            "squarespace.com"
+        ];
+
+        // Mostrar los dominios bloqueados en el panel
+        function displayBlockedDomains() {
+            blockListContainer.innerHTML = "";
+            blockedDomains.forEach(domain => {
+                const listItem = document.createElement('li');
+                listItem.textContent = domain;
+                blockListContainer.appendChild(listItem);
+            });
+        }
+
+        displayBlockedDomains();
+
+        // Agregar un dominio personalizado
+        function addCustomDomain() {
+            const customDomainInput = document.getElementById('custom-domain');
+            const customDomain = customDomainInput.value.trim();
+            if (customDomain && !Array.from(domainsSelect.options).some(opt => opt.value === customDomain)) {
+                const option = document.createElement('option');
+                option.value = customDomain;
+                option.textContent = customDomain;
+                domainsSelect.appendChild(option);
+            }
+            customDomainInput.value = '';
+        }
+
+        // Iniciar la exploración
+        async function startExploring() {
+            const selectedDomains = Array.from(domainsSelect.selectedOptions).map(opt => opt.value);
+            const attempts = parseInt(document.getElementById('attempts').value, 10) || 1;
+
+            if (selectedDomains.length === 0) {
+                logMessage("Por favor selecciona al menos un dominio.");
+                return;
+            }
+
+            for (let i = 0; i < attempts; i++) {
+                const randomUrl = generateRandomUrl(selectedDomains);
+                try {
+                    if (isBlocked(randomUrl)) {
+                        logMessage(`Bloqueado: ${randomUrl}`);
+                        continue;
+                    }
+                    const response = await fetch(randomUrl, { mode: 'no-cors' });
+                    logMessage(`Página encontrada: ${randomUrl}`);
+                    window.open(randomUrl, '_blank');
+                } catch {
+                    logMessage(`Falló: ${randomUrl}`);
+                }
+            }
+        }
+
+        // Generar un enlace aleatorio
+        function generateRandomUrl(domains) {
+            const consonants = 'bcdfghjklmnpqrstvwxyz';
+            const vowels = 'aeiou';
+            const randomDomain = domains[Math.floor(Math.random() * domains.length)];
+
+            let randomString = '';
+            for (let i = 0; i < 6; i++) {
+                randomString += i % 2 === 0
+                    ? consonants[Math.floor(Math.random() * consonants.length)]
+                    : vowels[Math.floor(Math.random() * vowels.length)];
+            }
+
+            return `https://www.${randomString}${randomDomain}`;
+        }
+
+        // Verificar si el dominio está bloqueado
+        function isBlocked(url) {
+            return blockedDomains.some(domain => url.includes(domain));
+        }
+
+        // Mostrar mensajes en el registro
+        function logMessage(message) {
+            const logItem = document.createElement('div');
+            logItem.textContent = message;
+            logContainer.appendChild(logItem);
+            logContainer.scrollTop = logContainer.scrollHeight; // Desplazarse al final
+        }
+    </script>
+</body>
+</html>
